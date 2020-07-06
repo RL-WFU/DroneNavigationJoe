@@ -10,7 +10,7 @@ import os
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def train(envs, policy, value):
-    Transition = collections.namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
+    Transition = collections.namedtuple("Transition", ["state", "action", "reward", "next_state", "done", "local_map", "next_local_map"])
     episode_lengths = np.zeros(0)
     episode_rewards = np.zeros(0)
     most_common_actions = []
@@ -48,15 +48,15 @@ def train(envs, policy, value):
                 action = np.random.randint(0, 4)
 
             else:
-                states = get_last_t_states(config.seq_length, episode)
-                action_probs = policy.predict(states)
+                states, local_maps = get_last_t_states(config.seq_length, episode)
+                action_probs = policy.predict(states, local_maps)
                 action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
-            next_state, flat_local_map, reward, done = episode_env.step_mining(action, t)
+            next_state, next_flat_local_map, reward, done = episode_env.step_mining(action, t)
 
             actions.append(action)
             episode.append(Transition(
-                state=state, action=action, reward=reward, next_state=next_state, done=done
+                state=state, action=action, reward=reward, next_state=next_state, done=done, local_map=flat_local_map, next_local_map=next_flat_local_map
             ))
 
             episode_rewards[i_episode] += reward
@@ -64,20 +64,21 @@ def train(envs, policy, value):
 
 
             if t >= config.seq_length:
-                states = get_last_t_states(config.seq_length, episode)
-                states1 = get_last_t_minus_one_states(config.seq_length, episode)
+                states, local_maps = get_last_t_states(config.seq_length, episode)
+                states1, local_maps1 = get_last_t_minus_one_states(config.seq_length, episode)
 
-                value_next = value.predict(states1)
+                value_next = value.predict(states1, local_maps1)
                 td_target = reward + config.discount_factor * value_next
-                td_error = td_target - value.predict(states)
+                td_error = td_target - value.predict(states, local_maps)
 
-                value.update(states, td_target, i_episode)
-                policy.update(states, td_error, action, i_episode)
+                value.update(states, td_target, i_episode, local_maps)
+                policy.update(states, td_error, action, i_episode, local_maps)
 
             if done:
                 break
 
             state = next_state
+            flat_local_map = next_flat_local_map
 
         interval_totals[i_episode // config.plot_interval] += episode_rewards[i_episode]
         interval_averages[i_episode // config.plot_interval] = interval_totals[i_episode // config.plot_interval] \
@@ -184,3 +185,16 @@ if __name__ == "__main__":
 #Try adding entropy to the loss function
 #Keep training to see if you can replicate 70% coverage
 #Migrate to A3C to try to improve stability in training
+
+
+#CREATE MODEL WITH CUSTOMIZED WEIGHTS AND BIASES FROM ARRAY
+#Model structure - Conv 32 (3,3 filter), relu, input (28, 28, 1)
+#MaxPooling2D (2, 2)
+#Flatten
+#Dense 100 (relu)
+#Dense 10 (softmax)
+#opt - SGD(0.01, momentum =.9)
+#loss : categorical crossentropy
+#Write about making model using Keras
+
+#Pick target more intelligently - look at Ashley's code and figure out how to do this

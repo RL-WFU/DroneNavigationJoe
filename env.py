@@ -285,6 +285,7 @@ class Env:
 
         # TODO: can instead set the done condition to be target reached
         if time > self.config.max_steps:
+            print(time)
             self.done = True
 
         return state, flattened_local_map, reward, self.done

@@ -5,25 +5,36 @@ import os
 
 def get_last_t_states(t, episode):
     states = []
+    local_maps = []
     for i, transition in enumerate(episode[-t:]):
         states.append(transition.state)
+        local_maps.append(transition.local_map)
 
     states = np.asarray(states)
     states = np.reshape(states, [1, t, config.vision_size + 4])
 
-    return states
+    local_maps = np.asarray(local_maps)
+    local_maps = np.reshape(local_maps, [1, t, 625])
+
+    return states, local_maps
 
 def get_last_t_minus_one_states(t, episode):
     states = []
+    local_maps = []
     for i, transition in enumerate(episode[-t + 1:]):
         states.append(transition.state)
+        local_maps.append(transition.local_map)
 
     states.append(episode[-1].next_state)
+    local_maps.append(episode[-1].next_local_map)
 
     states = np.asarray(states)
     states = np.reshape(states, [1, t, config.vision_size + 4])
 
-    return states
+    local_maps = np.asarray(local_maps)
+    local_maps = np.reshape(local_maps, [1, t, 625])
+
+    return states, local_maps
 
 
 def plot_graphs(i_episode, interval_averages, interval_avg_mining_covered, interval_avg_total_covered, episode_env, env_interval_averages, env_interval_avg_mining_covered, env_interval_avg_total_covered):

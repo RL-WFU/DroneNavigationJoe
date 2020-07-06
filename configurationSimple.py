@@ -5,7 +5,7 @@ class ConfigSimple(object):
     total_cols = 200
 
     num_episodes = 10000
-    max_steps = 175
+    max_steps = 200
 
 
     lr = 0.00001
@@ -17,6 +17,10 @@ class ConfigSimple(object):
 
     plot_interval = 100
 
-    save_dir = 'Mining_Saves/Test20'
+    save_dir = 'Mining_Saves/Test34'
 
     img_dir = 'Training_images'
+
+    num_workers = 8
+
+    weight_dir = 'Mining_saves/Test34/Weights'
